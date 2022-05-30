@@ -1,7 +1,7 @@
 #requires mixtools
 
 
-GaussMixBased <-function(dep_data_cols, noise_percents, return_noiseless=FALSE, randseed=123)
+GaussMixBased <-function(dep_data_cols, noise_percents, return_noiseless=FALSE, return_fitted=FALSE, randseed=123)
 {   
 set.seed(randseed)    
 d4t4<-dep_data_cols
@@ -18,13 +18,19 @@ noise_amounts= noise_percents*unlist(lapply(ranges, function(x) x[[2]] - x[[1]])
 noises=lapply(1:nrow(d4t4),function(x) unlist(lapply(noise_amounts, function(x) rnorm(1,0,x))))
 noises=Reduce(rbind,noises)
 Y= rowSums(log((y1+abs(noises))/(y2+abs(noises)))) >0
+result_list=list(Y=Y)
 if (return_noiseless)
 {
     Y_clean=rowSums(log((y1)/(y2))) >0
-    return(list(Y=Y, Y_clean=Y_clean))
-} else{
-    return(Y)
+    result_list$Y_clean=Y_clean
 }
+if (return_fitted)
+{
+    result_list$y1=y1
+    result_list$y2=y2
+    result_list$EMfits=EMfits
+}
+return(result_list)
 }
 
 
@@ -38,7 +44,6 @@ ranges=lapply(IDX, function(x) range(d4t4[,x]))
 noise_amounts= noise_percents*unlist(lapply(ranges, function(x) x[[2]] - x[[1]]))
 noises=lapply(1:nrow(d4t4),function(x) unlist(lapply(noise_amounts, function(x) rnorm(1,0,x))))
 noises=Reduce(rbind,noises)
-if (length(quants)==1) quants=rep(quants,length(IDX))
 q_j=apply(d4t4[,IDX],2,quantile,quants)
 `[x_j>q_j]`=t(apply(d4t4[,IDX]+noises,1, function(row) row> q_j) )
 p_j=P*`[x_j>q_j]`
@@ -60,11 +65,10 @@ ranges=lapply(IDX, function(x) range(d4t4[,x]))
 noise_amounts= noise_percents*unlist(lapply(ranges, function(x) x[[2]] - x[[1]]))
 noises=lapply(1:nrow(d4t4),function(x) unlist(lapply(noise_amounts, function(x) rnorm(1,0,x))))
 noises=Reduce(rbind,noises)
-if (length(quants)==1) quants=rep(quants,length(IDX))
 q_j=apply(d4t4[,IDX],2,quantile,quants)
 `[x_j>q_j]`=t(apply(d4t4[,IDX]+noises,1, function(row) row> q_j) )
 Sc= rowSums(`[x_j>q_j]`)
-p_y= unlist(lapply(Sc, function(s) if (s>0) p_k[[s]] else 0) )
+p_y= unlist(lapply(Sc, function(s)  if (s>0){  p_k[[s]]} else 0) )
 Y= unlist(lapply(p_y, function(pr) sample(c(1,0),1,prob=c(pr,1-pr))))
 return(Y)
 } 
