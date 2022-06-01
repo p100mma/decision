@@ -1,7 +1,7 @@
 #requires mixtools
 
 
-GaussMixBased <-function(dep_data_cols, noise_percents, return_noiseless=FALSE, return_fitted=FALSE, p_0=(780/(780+620)), randseed=123)
+GaussMixBased <-function(dep_data_cols, noise_percents, return_noiseless=FALSE, return_fitted=FALSE, p_0=(781/(781+613)), randseed=123)
 {   
 set.seed(randseed)    
 d4t4<-dep_data_cols
@@ -20,25 +20,41 @@ NOISES=list(noises1,noises2)
 y1=matrix(nrow=nrow(d4t4),ncol=length(IDX)); y2=matrix(nrow=nrow(d4t4),ncol=length(IDX)); #model densities 
 J1<-vector(length=length(IDX))
 J2<-vector(length=length(IDX))
+current_prop=0.5
 for (i in seq_along(IDX)){
-  j1<-sample(c(0,1),1, prob=c(1-p_0,p_0))
-  j2<-(!j1)*1.0
-  j1<-j1+1
-  j2<-j2+1
-  J1[[i]]<-j1
-  J2[[i]]<-j2
-  y1[,i]= EMfits[[i]]$lambda[[j1]]*dnorm(d4t4[,IDX[[i]]]+NOISES[[j1]][,i] ,EMfits[[i]]$mu[[j1]], EMfits[[i]]$sigma[[j1]]) 
-  y2[,i]= EMfits[[i]]$lambda[[j2]]*dnorm(d4t4[,IDX[[i]]]+NOISES[[j2]][,i] , EMfits[[i]]$mu[[j2]], EMfits[[i]]$sigma[[j2]])
+  f_1=EMfits[[i]]$lambda[[1]]*dnorm(d4t4[,IDX[[i]]]+NOISES[[1]][,i] ,EMfits[[i]]$mu[[1]], EMfits[[i]]$sigma[[1]]) 
+  f_2=EMfits[[i]]$lambda[[2]]*dnorm(d4t4[,IDX[[i]]]+NOISES[[2]][,i] , EMfits[[i]]$mu[[2]], EMfits[[i]]$sigma[[2]])
+  if ((sum(f_1>f_2)/length(f_1))>0.5 ) j_max=1 else j_max=2
+  j_min=ifelse(j_max==1,2,1)
+  if (current_prop < p_0){ j1=j_min; j2=j_max }
+                        else{j1=j_max;j2=j_min}
+  f_jk=list(f_1,f_2)
+  y1[,i]=f_jk[[j1]]
+  y2[,i]=f_jk[[j2]]
+  J1[i]<-j1
+  J2[i]<-j2
+  if (i>1)
+    current_S=rowSums(log(y1[,1:i]/y2[,1:i]))
+  else
+    current_S=log(y1[,1:i]/y2[,1:i])
+  current_prob= (exp(current_S))/(1+exp(current_S))
+  #print(i)
+  #print(y1[,1:i][1:20])
+  #print(y2[,1:i][1:20])
+  #print(current_S[1:20])
+  #print(current_prob[1:20])
+  current_prop=sum( (unlist(lapply(current_prob, function(pr) sample(c(0,1),1,prob=c(1-pr,pr)))))==0)/nrow(d4t4)
+  print(current_prop)
 }
 
-Y= rowSums(log((y1)/(y2))) >0
+#Y= rowSums(log((y1)/(y2))) >0
 #log_p <-function(X)
 #{       
 #    ifelse(X<=0, 0.0000001,log(X))
 #}
-#S= rowSums(log((y1)/(y2))) 
-#p_y=exp(S)/(1 +exp(S))
-#Y= unlist(lapply(p_y, function(pr) sample(c(1,0),1,prob=c(pr,1-pr)))) 
+S= rowSums(log((y1)/(y2))) 
+p_y=exp(S)/(1 +exp(S))
+Y= unlist(lapply(p_y, function(pr) sample(c(1,0),1,prob=c(pr,1-pr)))) 
 result_list=list(Y=Y)
 if (return_noiseless)
 { 
@@ -52,10 +68,10 @@ if (return_noiseless)
    # print(sum(is.na(y1)) )
    # print(sum(is.na(y2cl))) 
    # print(sum(is.na(y2)) )
-   # Scl= rowSums(log((y1cl)/(y2cl))) 
-   # p_ycl=exp(Scl)/(1 +exp(Scl))
-   # Y_clean= unlist(lapply(p_ycl, function(pr) sample(c(1,0),1,prob=c(pr,1-pr)))) 
-    Y_clean= rowSums(log((y1cl)/(y2cl))) >0
+    Scl= rowSums(log((y1cl)/(y2cl))) 
+    p_ycl=exp(Scl)/(1 +exp(Scl))
+    Y_clean= unlist(lapply(p_ycl, function(pr) sample(c(1,0),1,prob=c(pr,1-pr)))) 
+   # Y_clean= rowSums(log((y1cl)/(y2cl))) >0
     result_list$Y_clean=Y_clean
 }
 if (return_fitted)
