@@ -1,9 +1,9 @@
 #requires mixtools
 
 
-GaussMixBased <-function(dep_data_cols, noise_percents, return_noiseless=FALSE, return_fitted=FALSE, p_0=(781/(781+613)), randseed=123)
+GaussMixBased <-function(dep_data_cols, noise_percents, return_noiseless=FALSE, return_fitted=FALSE, p_0=(781/(781+613)), randseed=NULL)
 {   
-set.seed(randseed)    
+if(!is.null(randseed)) set.seed(randseed)    
 d4t4<-dep_data_cols
 IDX=c(1:ncol(dep_data_cols))
 EMfits<- lapply(IDX, function(x) normalmixEM(d4t4[,x]))
@@ -90,9 +90,9 @@ return(result_list)
 }
 
 
-ReverseBayes<-function(dep_data_cols, noise_percents,P,quants,  randseed=123)
+ReverseBayes<-function(dep_data_cols, noise_percents,P,quants,  randseed=NULL)
 {
-set.seed(randseed)    
+if( !is.null(randseed)) set.seed(randseed)    
 d4t4<-dep_data_cols
 IDX=c(1:ncol(dep_data_cols))
 if (length(noise_percents)==1) noise_percents=rep(noise_percents,length(IDX))
@@ -111,9 +111,9 @@ Y= unlist(lapply(p_y, function(pr) sample(c(1,0),1,prob=c(pr,1-pr))) )
 return(Y)
 }
 
-SumOf1s<-function(dep_data_cols, noise_percents,quants,p_k=c(rep(0,4),0.3,0.5,0.7,rep(1,3)),  randseed=123)
+SumOf1s<-function(dep_data_cols, noise_percents,quants,p_k=c(rep(0,4),0.3,0.5,0.7,rep(1,3)),  randseed=NULL)
 {
-set.seed(randseed)    
+if (!is.null(randseed)) set.seed(randseed)    
 d4t4<-dep_data_cols
 IDX=c(1:ncol(dep_data_cols))
 if (length(noise_percents)==1) noise_percents=rep(noise_percents,length(IDX))
