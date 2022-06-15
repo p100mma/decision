@@ -38,6 +38,9 @@ for (i in seq_along(IDX)){
   else
     current_S=log(y1[,1:i]/y2[,1:i])
   current_prob= (exp(current_S))/(1+exp(current_S))
+  if (sum(is.na(current_prob))!=0)
+        { message('NA estimated probability, try again');
+          return(NULL)    }
   #print(i)
   #print(y1[,1:i][1:20])
   #print(y2[,1:i][1:20])
