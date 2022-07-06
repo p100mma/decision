@@ -19,7 +19,7 @@ atan_py<- function(x,m)
 ((1/pi)*atan(m*x)) + (1/2)
 }
 
-XorFuzzy <-function(dep_data_cols, offsets, quant, py_fun, py_fun_args)
+XorFuzzy <-function(dep_data_cols, offsets,  py_fun, py_fun_args)
 {
 if (ncol(dep_data_cols)!=2) stop("please use 2 variables only.")
 x10=x1-offset1 
