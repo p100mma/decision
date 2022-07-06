@@ -24,8 +24,8 @@ XorFuzzy <-function(dep_data_cols, offsets,  py_fun, py_fun_args)
 if (ncol(dep_data_cols)!=2) stop("please use 2 variables only.")
 x1=dep_data_cols[,1]
 x1=dep_data_cols[,2]
-x10=x1-offset1 
-x2o=x2-offset2
+x10=x1-offsets[[1]]
+x2o=x2-offsets[[2]]
 conj1=pmin(-x1o,x2o); conj2=pmin(x1o,-x2o)
 xXOR=pmax(conj1,conj2)
 py_fun_args$x= xXOR
