@@ -26,8 +26,6 @@ x1=dep_data_cols[,1]
 x2=dep_data_cols[,2]
 x1o=x1-offsets[[1]]
 x2o=x2-offsets[[2]]
-x1o<<-x1o
-x2o<<-x2o
 conj1=pmin(-x1o,x2o); conj2=pmin(x1o,-x2o)
 xXOR=pmax(conj1,conj2)
 py_fun_args$x= xXOR
