@@ -143,6 +143,10 @@ EM2weighted.density<- function(EM, X, `%noi`=0)
                 )
     }
 
+expand.grid.list<-function(..., stringsAsFactors=F){
+    tdf<-expand.grid(..., stringsAsFactors = stringsAsFactors)
+    lapply(split(tdf,seq(nrow(tdf))),as.list)
+} 
 
 GaussANDMix<- function(dep_data_cols, dep_data_MMfits, AND.str=0, mg=30, mA=30, AND.dist.from.mu.in.sds=1, noise_percent=0.)
 {
@@ -204,4 +208,3 @@ Y= unlist(lapply(prs, function(pr) sample(c(1,0),1, prob =c(pr,1-pr))  ))
         sigmas=gaussian.sigmas)
 }
 
- 
