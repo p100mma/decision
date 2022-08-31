@@ -130,4 +130,78 @@ Sc= rowSums(`[x_j>q_j]`)
 p_y= unlist(lapply(Sc, function(s)  if (s>0){  p_k[[s]]} else 0) )
 Y= unlist(lapply(p_y, function(pr) sample(c(1,0),1,prob=c(pr,1-pr))))
 return(Y)
-} 
+}
+
+EM2weighted.density<- function(EM, X, `%noi`=0)
+    {
+        do.call(cbind,lapply(seq_along(EM$lambda),
+                             function(h) 
+                                 EM$lambda[[h]]*dnorm(X + rnorm(length(X),0, `%noi`*EM$sigma[[h]]), 
+                                                      EM$mu[[h]],
+                                                      EM$sigma[[h]])
+                             )
+                )
+    }
+
+
+GaussANDMix<- function(dep_data_cols, dep_data_MMfits, AND.str=0, mg=30, mA=30, AND.dist.from.mu.in.sds=1, noise_percent=0.)
+{
+    EMfits<- dep_data_MMfits
+    X_k<- dep_data_cols
+    n_k<- ncol(X_k)
+    n_h<-2
+    if (n_k<2) stop('at least 2 cols in dep_data_cols are required')
+    n_obj<- nrow(X_k)
+    gaussians<-expand.grid.list( lapply(1:n_k, function(.dummy) 1:n_h ) )
+    gaussians<-lapply(gaussians, unlist)
+    w.densities=lapply(1:n_k, function(k) EM2weighted.density(EMfits[[k]], X_k[,k], noise_percent )
+                       )
+    gaussian.centers<- lapply(gaussians, function(whichMus) 
+                              unlist(lapply(seq_along(whichMus),function(h) 
+                                    EMfits[[h]]$mu[[ whichMus[[h]] ]] 
+                                           )
+                                    )
+                              )
+    gaussian.sigmas<- lapply(gaussians, function(whichMus) 
+                              unlist(lapply(seq_along(whichMus),function(h) 
+                                    EMfits[[h]]$sigma[[ whichMus[[h]] ]] 
+                                           )
+                                    )
+                              )
+    mu.max=apply(do.call(rbind,gaussian.centers),
+                 2,max)
+    CM<-do.call(rbind,gaussian.centers)
+    which.gauss.class1<- which(apply(do.call(cbind,
+                                       lapply(1:ncol(CM), function(i) 
+                                           CM[,i]==mu.max[[i]]
+                                              )
+                                        ),
+                                     1, sum)==2)
+    c1.gauss<- gaussians[[which.gauss.class1]]
+    c1.center.dist<- rowSums( (X_k- gaussian.centers[[which.gauss.class1]])^2)^(1/2)
+c1.score<-apply(do.call(cbind, 
+                  lapply(seq_along(w.densities), function(k) 
+                    {
+                    w.densities[[k]][,c1.gauss[[k]]]
+                    }  )
+                 ),
+                1,min
+               )
+
+AND.score<- apply(X_k +rep(noise_percent,n_k)*gaussian.sigmas[[which.gauss.class1]]  - (mu.max - AND.dist.from.mu.in.sds*gaussian.sigmas[[which.gauss.class1]] ),1,min) 
+prg= atan_py(c1.score - median(c1.score),m=mg)
+prA=atan_py(AND.score,m=mA)
+if( AND.str==0) wA<-0 else
+                        wA= ((c1.center.dist)/max(c1.center.dist))^(1/AND.str)
+prs=(1-wA)*prg + wA* prA
+Y= unlist(lapply(prs, function(pr) sample(c(1,0),1, prob =c(pr,1-pr))  ))
+    list(Y=Y,
+        w.densities=w.densities,
+        fits=EMfits,
+        which.density.for.each.variable.is.class1=c1.gauss,
+        mu.max=mu.max,
+        centers=gaussian.centers,
+        sigmas=gaussian.sigmas)
+}
+
+ 
